@@ -11,6 +11,8 @@ async def get_resume(info: dict) -> str:
     
     Статистика:
     - Дата регистрации: {info.get('created_at')}
+    - Компания: {info.get('company')}
+    - Bio: {info.get('bio')}
     - Подписчиков: {info.get('followers')}
     - Публичных репозиториев: {info.get('all_repos')}
     - Языки: {info.get('languages')}
@@ -19,6 +21,10 @@ async def get_resume(info: dict) -> str:
     - Всего форков: {info.get('total_forks')}
     - Всего readmes: {info.get('total_readmes')}
     - Примерная активность: ~{info.get('activ')} коммитов за последний год
+    - Описания репозиториев: {info.get('descriptions')}
+    - READMES к репозиториям: {info.get('readmes')}
+    - Темы репозиториев: {info.get('topics')}
+    - 10 последних событий: {info.get('events')}
     
     
     Напиши краткое резюме в 3-4 предложения: кто этот разработчик (стек, специализация), насколько активен, есть ли популярные проекты, что можно сказать о его опыте.
