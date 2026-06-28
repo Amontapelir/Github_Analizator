@@ -9,9 +9,9 @@ async def get_info(username: str) -> dict:
     full_info = await Repository.get_full_info(username)
     return full_info
 
-@router.get("/auth/login/google")
-async def login_google():
-    url = Repository.get_google_url()
+@router.get("/auth/login/yandex")
+async def login_yandex():
+    url = Repository.get_yandex_url()
     return RedirectResponse(url)
 
 @router.get("/auth/login/github")
@@ -19,12 +19,12 @@ async def login_github():
     url = Repository.get_github_url()
     return RedirectResponse(url)
 
-@router.get("/auth/google")
-async def auth_google(code: str):
+@router.get("/auth/yandex")
+async def auth_yandex(code: str):
     if not code:
         raise HTTPException(status_code=400, detail="Authorization code is missing")
 
-    user_info = await Repository.authenticate_google(code)
+    user_info = await Repository.authenticate_yandex(code)
     email = user_info.get("email")
     name = user_info.get("name")
 
@@ -44,6 +44,6 @@ async def auth_github(code: str):
     name = user_info.get("name")
 
     # Сохраняем пользователя
-    await Repository.save_or_update_user(email=email, name=name)
+    await Repository.save_or_update_user(email=email, github_username=name)
 
     return RedirectResponse("/dashboard")
