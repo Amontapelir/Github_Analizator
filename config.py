@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+APP_HOST = os.getenv('APP_HOST')
+APP_PORT = int(os.getenv('APP_PORT'))
+APP_BASE_URL = f"{APP_HOST}:{APP_PORT}"
+
 MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY')
 GITHUB_API_KEY = os.getenv('GITHUB_API_KEY')
 
@@ -21,8 +25,8 @@ GITHUB_AUTH_URL = "https://github.com/login/oauth/authorize"
 GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 GITHUB_USERINFO_URL = "https://api.github.com/user"
 
-YANDEX_REDIRECT_URI = "http://127.0.0.1:8000/auth/yandex"
-GITHUB_REDIRECT_URI = "http://127.0.0.1:8000/auth/github"
+YANDEX_REDIRECT_URI = f"http://{APP_BASE_URL}/auth/yandex"
+GITHUB_REDIRECT_URI = f"http://{APP_BASE_URL}/auth/github"
 
 HOST = os.getenv('POSTGRES_HOST')
 PORT = os.getenv('POSTGRES_PORT')
