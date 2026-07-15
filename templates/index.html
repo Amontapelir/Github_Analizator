@@ -303,6 +303,18 @@
         </div>
     </template>
 
+
+    <!-- Модальное окно для ошибок -->
+    <div id="error-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeErrorModal()">×</button>
+            <div class="modal-icon">⚠️</div>
+            <h3>Произошла ошибка</h3>
+            <p id="error-message">Текст ошибки будет здесь</p>
+            <button class="modal-btn" onclick="closeErrorModal()">Понятно</button>
+        </div>
+    </div>
+
     <script src="/static/js/app.js"></script>
 </body>
 </html>

@@ -328,28 +328,49 @@ async function fetchInfo() {
     const resultDiv = document.getElementById('result');
 
     loader.classList.remove('hidden');
-    resultDiv.replaceChildren(); /* очищаем предыдущий результат */
+    resultDiv.replaceChildren(); // очищаем предыдущий результат
 
     try {
         const res = await fetch(`/user?username=${encodeURIComponent(username)}`);
-        const data = await res.json();
 
-        /* renderResult возвращает DocumentFragment — вставляем в DOM */
+        // ПРОВЕРКА: Если статус не 2xx, значит бэкенд вернул ошибку
+        if (!res.ok) {
+            const errorData = await res.json();
+            // Берем сообщение из нашего JSONResponse, или fallback текст
+            throw new Error(errorData.error || errorData.detail || "Неизвестная ошибка сервера");
+        }
+
+        const data = await res.json();
         resultDiv.replaceChildren(renderResult(data));
         addToHistory(username);
 
-        /* Запускаем анимации ПОСЛЕ того, как элементы в DOM */
         setTimeout(animateCounters, 120);
         setTimeout(animateBars, 200);
-    } catch {
-        resultDiv.replaceChildren(
-            cloneTemplate('tmpl-error')
-        );
-        resultDiv.querySelector('[data-field="error-text"]').textContent =
-            'Не удалось загрузить данные. Проверьте подключение и попробуйте снова.';
+
+    } catch (err) {
+        // Вместо рендера ошибки в div, показываем модальное окно!
+        showErrorModal(err.message);
     } finally {
         loader.classList.add('hidden');
     }
+}
+
+// ==========================================
+// ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ МОДАЛЬНЫМ ОКНОМ
+// ==========================================
+
+function showErrorModal(message) {
+    const modal = document.getElementById('error-modal');
+    const msgElement = document.getElementById('error-message');
+
+    // Вставляем текст ошибки (заменяем переносы строк на <br> для читаемости)
+    msgElement.innerHTML = message.replace(/\n/g, '<br>');
+
+    modal.classList.remove('hidden');
+}
+
+function closeErrorModal() {
+    document.getElementById('error-modal').classList.add('hidden');
 }
 
 /* ------------------------------------------
@@ -739,5 +760,14 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Если есть кнопка поиска — мы на index.html */
     if (document.getElementById('search-btn')) {
         initAppPage();
+    }
+
+    const modal = document.getElementById('error-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeErrorModal();
+            }
+        });
     }
 });
