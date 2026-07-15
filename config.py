@@ -4,15 +4,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+APP_HOST = os.getenv('APP_HOST')
+APP_PORT = int(os.getenv('APP_PORT'))
+APP_BASE_URL = f"{APP_HOST}:{APP_PORT}"
+
 MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY')
 GITHUB_API_KEY = os.getenv('GITHUB_API_KEY')
 
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID_APP")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET_APP")
+YANDEX_CLIENT_ID = os.getenv("YANDEX_CLIENT_ID")
+YANDEX_CLIENT_SECRET = os.getenv("YANDEX_CLIENT_SECRET")
 
-GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
+YANDEX_AUTH_URL = "https://oauth.yandex.ru/authorize"
+YANDEX_TOKEN_URL = "https://oauth.yandex.ru/token"
+YANDEX_USERINFO_URL = "https://login.yandex.ru/info"
 
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
@@ -21,8 +25,8 @@ GITHUB_AUTH_URL = "https://github.com/login/oauth/authorize"
 GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 GITHUB_USERINFO_URL = "https://api.github.com/user"
 
-GOOGLE_REDIRECT_URI = "http://127.0.0.1:8000/auth/google"
-GITHUB_REDIRECT_URI = "http://127.0.0.1:8000/auth/github"
+YANDEX_REDIRECT_URI = f"http://{APP_BASE_URL}/auth/yandex"
+GITHUB_REDIRECT_URI = f"http://{APP_BASE_URL}/auth/github"
 
 HOST = os.getenv('POSTGRES_HOST')
 PORT = os.getenv('POSTGRES_PORT')

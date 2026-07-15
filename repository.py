@@ -6,21 +6,15 @@ from github import get_info
 from mistral_methods import get_resume
 from database import new_sessions
 from models import GithubUser, User
-from datetime import datetime
 
 from config import (
-    GOOGLE_TOKEN_URL,
-    GOOGLE_AUTH_URL,
-    GOOGLE_USERINFO_URL,
-    GITHUB_TOKEN_URL,
-    GITHUB_AUTH_URL,
-    GITHUB_USERINFO_URL,
-    GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET,
-    GITHUB_CLIENT_ID,
-    GITHUB_CLIENT_SECRET,
-    GOOGLE_REDIRECT_URI,
-    GITHUB_REDIRECT_URI,
+
+    GITHUB_TOKEN_URL, YANDEX_TOKEN_URL,
+    GITHUB_AUTH_URL, YANDEX_AUTH_URL,
+    GITHUB_USERINFO_URL, YANDEX_USERINFO_URL,
+    GITHUB_CLIENT_ID, YANDEX_CLIENT_ID,
+    GITHUB_CLIENT_SECRET, YANDEX_CLIENT_SECRET,
+    GITHUB_REDIRECT_URI, YANDEX_REDIRECT_URI,
 )
 
 
@@ -52,16 +46,15 @@ class Repository:
             return {'data': info, 'resume': resume}
 
     @staticmethod
-    def get_google_url():
+    def get_yandex_url():
+        # Создание url для регистрации пользователя
         params = {
             "response_type": "code",
-            "client_id": GOOGLE_CLIENT_ID,
-            "redirect_uri": GOOGLE_REDIRECT_URI,
-            "scope": "openid email profile",
-            "access_type": "offline",
-            "prompt": "consent",
+            "client_id": YANDEX_CLIENT_ID,
+            "redirect_uri": YANDEX_REDIRECT_URI,
+            "scope": "login:email",
         }
-        url = f"{GOOGLE_AUTH_URL}?{urlencode(params)}"
+        url = f"{YANDEX_AUTH_URL}?{urlencode(params)}"
         return url
 
     @staticmethod
@@ -69,25 +62,24 @@ class Repository:
         params = {
             "client_id": GITHUB_CLIENT_ID,
             "redirect_uri": GITHUB_REDIRECT_URI,
-            "scope": "user",
+            "scope": "read:user user:email",
         }
         url = f"{GITHUB_AUTH_URL}?{urlencode(params)}"
         return url
 
     @staticmethod
-    async def authenticate_google(code):
+    async def authenticate_yandex(code):
         async with httpx.AsyncClient() as client:
             # Обмен кода на токен
             data = {
-                "code": code,
-                "client_id": GOOGLE_CLIENT_ID,
-                "client_secret": GOOGLE_CLIENT_SECRET,
-                "redirect_uri": GOOGLE_REDIRECT_URI,
                 "grant_type": "authorization_code",
+                "client_id": YANDEX_CLIENT_ID,
+                "client_secret": YANDEX_CLIENT_SECRET,
+                "code": code
             }
             headers = {"Accept": "application/json"}
 
-            token_response = await client.post(GOOGLE_TOKEN_URL, data=data, headers=headers)
+            token_response = await client.post(YANDEX_TOKEN_URL, data=data, headers=headers)
             token_data = token_response.json()
 
             if "access_token" not in token_data:
@@ -97,15 +89,15 @@ class Repository:
 
             # Получение информации о пользователе
             user_response = await client.get(
-                GOOGLE_USERINFO_URL,
-                headers={"Authorization": f"Bearer {access_token}"}
+                YANDEX_USERINFO_URL,
+                headers={"Authorization": f"OAuth {access_token}"},
+                params={"format": "json"},
             )
             if user_response.status_code != 200:
-                raise HTTPException(status_code=400, detail="Failed to get user info")
+                raise HTTPException(status_code=400, detail="Failed to get Yandex user info")
 
-            user_info = user_response.json()
-
-            return user_info
+            user_data = user_response.json()
+            return {'name': user_data.get('login'), 'email': user_data.get('default_email')}
 
     @staticmethod
     async def authenticate_github(code):
@@ -137,9 +129,21 @@ class Repository:
             if user_response.status_code != 200:
                 raise HTTPException(status_code=400, detail="Failed to get GitHub user info")
 
-            user_info = user_response.json()
+            user_data = user_response.json()
 
-            return user_info
+            name = user_data.get("name") or user_data.get("login")
+            email = user_data.get("email")
+
+            if not email:
+                emails_resp = await client.get(
+                    "https://api.github.com/user/emails",
+                    headers={"Authorization": f"token {access_token}"}
+                )
+                emails = emails_resp.json()
+                primary_email = next((e["email"] for e in emails if e.get("primary")), None)
+                email = primary_email or emails[0]["email"] if emails else None
+
+            return {'name': name, 'email': email}
 
     @staticmethod
     async def save_or_update_user(

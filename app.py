@@ -7,6 +7,7 @@ from init_db import create_db_if_not_exist
 from models import create_tables
 from router import router
 from init_db import delete_db_if_exist
+from config import APP_HOST, APP_PORT
 
 
 @asynccontextmanager
@@ -33,4 +34,4 @@ async def dashboard(request: Request):
 if __name__ == '__main__':
     # print(f"templates.env.cache type: {type(templates.env.cache)}")
     # print(f"templates.env.cache: {templates.env.cache}")
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("app:app", host=APP_HOST, port=APP_PORT, reload=True)
