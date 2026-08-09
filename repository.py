@@ -7,6 +7,8 @@ from mistral_methods import get_resume
 from database import new_sessions
 from models import GithubUser, User
 from datetime import datetime
+from random import uniform
+import asyncio
 
 from config import (
     GOOGLE_TOKEN_URL,
@@ -24,9 +26,41 @@ from config import (
 )
 
 
+def retry(func, attempts: int = 4):
+    last_error = None
+    async def wrapper(*args, **kwargs):
+        last_error = None
+        for attempt in range(attempts):
+            print(f'[DEBUG] Попытка {attempt + 1} выполнения функции {func.__name__}')
+            delay = 2**attempt + uniform(0, 1.0)
+            try:
+                return await func(*args, **kwargs)
+
+            except httpx.TimeoutException as e:
+                last_error = e
+                await asyncio.sleep(delay)
+
+            except httpx.HTTPStatusError as e:
+                last_error = e
+                if 400 <= e.response.status_code < 600:
+                    await asyncio.sleep(delay)
+                else:
+                    print(f"[ERROR] Ошибка запроса {last_error}")
+                    raise last_error
+
+            except Exception as e:
+                last_error = e
+                print(f"[ERROR] Ошибка запроса {last_error}")
+                raise last_error
+        print(f"[ERROR] Ошибка запроса {last_error}")
+        raise last_error
+
+    return wrapper
+
 
 class Repository:
     @staticmethod
+    @retry
     async def get_full_info(username: str) -> dict:
         async with new_sessions() as session:
             cache = await session.get(GithubUser, username)
@@ -75,6 +109,7 @@ class Repository:
         return url
 
     @staticmethod
+    @retry
     async def authenticate_google(code):
         async with httpx.AsyncClient() as client:
             # Обмен кода на токен
@@ -88,6 +123,7 @@ class Repository:
             headers = {"Accept": "application/json"}
 
             token_response = await client.post(GOOGLE_TOKEN_URL, data=data, headers=headers)
+            token_response.raise_for_status()
             token_data = token_response.json()
 
             if "access_token" not in token_data:
@@ -100,14 +136,13 @@ class Repository:
                 GOOGLE_USERINFO_URL,
                 headers={"Authorization": f"Bearer {access_token}"}
             )
-            if user_response.status_code != 200:
-                raise HTTPException(status_code=400, detail="Failed to get user info")
+            user_response.raise_for_status()
+            user_data = user_response.json()
 
-            user_info = user_response.json()
-
-            return user_info
+            return user_data
 
     @staticmethod
+    @retry
     async def authenticate_github(code):
         async with httpx.AsyncClient() as client:
             # Обмен кода на токен
@@ -119,6 +154,7 @@ class Repository:
             headers = {"Accept": "application/json"}
 
             token_response = await client.post(GITHUB_TOKEN_URL, data=data, headers=headers)
+            token_response.raise_for_status()
             token_data = token_response.json()
 
             if "access_token" not in token_data:
@@ -134,12 +170,10 @@ class Repository:
                     "Accept": "application/json"
                 }
             )
-            if user_response.status_code != 200:
-                raise HTTPException(status_code=400, detail="Failed to get GitHub user info")
+            user_response.raise_for_status()
+            user_data = user_response.json()
 
-            user_info = user_response.json()
-
-            return user_info
+            return user_data
 
     @staticmethod
     async def save_or_update_user(

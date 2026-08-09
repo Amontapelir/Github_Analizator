@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+
+import httpx
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
@@ -11,18 +13,23 @@ from init_db import delete_db_if_exist
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await delete_db_if_exist()
+    # await delete_db_if_exist()
     await create_db_if_not_exist()
     await create_tables()
-    yield 
+    yield
+
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+@app.exception_handler(httpx.HTTPError)
+async def http_exception_handler(request: Request, exc: httpx.HTTPError):
+    return {"error": f"Произошла непредвиденная ошибка {exc}"}
+
 app.include_router(router)
 
-@app.get("/", include_in_schema=False)
+@app.get("/auth", include_in_schema=False)
 async def login_page(request: Request):
     return templates.TemplateResponse("auth.html", {"request": request})
 
