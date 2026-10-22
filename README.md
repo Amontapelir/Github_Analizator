@@ -1,4 +1,3 @@
-```markdown
 # GitHub Profile Analyzer 📊
 
 Веб-приложение для анализа профилей GitHub с генерацией AI-резюме через Mistral AI.
@@ -134,4 +133,3 @@ MIT — используйте свободно.
 
 ---
 *Автор: Amontapelir | 2026*
-```
